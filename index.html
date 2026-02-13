@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -6,12 +6,44 @@
   <title>MarkerLess AR using Chenzlab</title>
 
   <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
-  <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="./aframe-ar-main/dist/aframe-ar.js"></script>
 
 </head>
 <body>
   <a-scene ar>
     <a-box color="red" scale = "0.2 0.2 0.2"></a-box>
+  </a-scene>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Markerless AR</title>
+
+  <!-- Stable A-Frame -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- Your Local aframe-ar -->
+  <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
+</head>
+
+<body>
+  <a-scene
+    ar
+    vr-mode-ui="enabled: true"
+    renderer="logarithmicDepthBuffer: true;"
+  >
+
+    <a-box
+      position="0 0 -1"
+      color="red"
+      scale="0.2 0.2 0.2">
+    </a-box>
+
   </a-scene>
 </body>
 </html>
