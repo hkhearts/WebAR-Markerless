@@ -15,64 +15,69 @@
   <script>
     function showMessage(message){
         let hud = document.querySelector("#hud");
-        hud.setAttribute('value', message);
+        if(hud){
+          hud.setAttribute('value', message);
+        }
     }
 
     AFRAME.registerComponent('ar-logic',{
       init : function(){
         showMessage('ar-logic running');
       },
+
       tick : function(){
         let cam = document.querySelector("#cam");
-        if(!cam){return;}
+        if(!cam || !cam.components.raycaster){return;}
 
-        showMessage('cam detected');
+        let intersection = cam.components.raycaster.getIntersection(document.querySelector("#circle"));
+        if(!intersection){return;}
 
-        let collision = cam.components.raycaster.getIntersection(this.el);
-        if(!collision) {return;}
-        showMessage('Collision Detected!!' + collision.point.x.toFixed(2) + " " + collision.point.z.toFixed(2));
-
+        showMessage('Collision Detected!! ' + 
+          intersection.point.x.toFixed(2) + " " + 
+          intersection.point.z.toFixed(2)
+        );
 
         let circle = document.querySelector("#circle");
-        circle.setAttribute('position', circle.point);
-
+        circle.setAttribute('position', intersection.point);
       }
     });
 
     window.addEventListener('touchstart', function(){
       let box = document.querySelector("#box");
       let circle = document.querySelector("#circle");
-      let posCircle = circle.getAttribute('position');
-      let posBox = box.getAttribute('position');
+
+      let posCircle = circle.object3D.position;
+      let posBox = box.object3D.position;
 
       let distance = posBox.distanceTo(posCircle);
 
-      let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)} `
-      box.setAttribute('animation', `property:position;to:${position_string}; dur:1000;`);
-
-      // box.setAttribute('position', pos);
-
+      let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)}`;
+      
+      box.setAttribute('animation', 
+        `property: position; to: ${position_string}; dur: 1000;`
+      );
     });
   </script>
 
   <a-scene ar ar-logic vr-mode-ui="enabled: true" renderer="logarithmicDepthBuffer: true;">
-    <a-camera id="cam" ar-raycaster raycaster="objects:none;">
+    
+    <a-camera id="cam" ar-raycaster raycaster="objects: #circle;">
       <a-text id="hud" 
-      value="Summa Text" 
-      position="0 -0.1 -0.25"
-      align="center"
-      wrap-count="800"
-      ></a-text>
+        value="Summa Text" 
+        position="0 -0.1 -0.25"
+        align="center"
+        wrap-count="40">
+      </a-text>
     </a-camera>
 
     <a-ring
       id="circle"
       rotation="-90 0 0"
-      radius-inner = "0.01"
-      radius-outer="0.02"
-    ></a-ring>
+      radius-inner="0.01"
+      radius-outer="0.02">
+    </a-ring>
 
-    <a-box animation id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+    <a-box id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
 
   </a-scene>
 </body>
