@@ -1,15 +1,79 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>markerLess</title>
-  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
+  <meta charset="utf-8">
+  <title>Markerless AR</title>
+
+  <!-- Stable A-Frame -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- Your Local aframe-ar -->
   <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
 </head>
+
 <body>
-  <a-scene ar>
-    <a-box color="red" scale="0.2 0.2 0.2"></a-box>
+  <script>
+    function showMessage(message){
+        let hud = document.querySelector("#hud");
+        hud.setAttribute('value', message);
+    }
+
+    AFRAME.registerComponent('ar-logic',{
+      init : function(){
+        showMessage('ar-logic running');
+      },
+      tick : function(){
+        let cam = document.querySelector("#cam");
+        if(!cam){return;}
+
+        showMessage('cam detected');
+
+        let collision = cam.components.raycaster.getIntersection(this.el);
+        if(!collision) {return;}
+        showMessage('Collision Detected!!' + collision.point.x.toFixed(2) + " " + collision.point.z.toFixed(2));
+
+
+        let circle = document.querySelector("#circle");
+        circle.setAttribute('position', circle.point);
+
+      }
+    });
+
+    window.addEventListener('touchstart', function(){
+      let box = document.querySelector("#box");
+      let circle = document.querySelector("#circle");
+      let posCircle = circle.getAttribute('position');
+      let posBox = box.getAttribute('position');
+
+      let distance = posBox.distanceTo(posCircle);
+
+      let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)} `
+      box.setAttribute('animation', `property:position;to:${position_string}; dur:1000;`);
+
+      // box.setAttribute('position', pos);
+
+    });
+  </script>
+
+  <a-scene ar ar-logic vr-mode-ui="enabled: true" renderer="logarithmicDepthBuffer: true;">
+    <a-camera id="cam" ar-raycaster raycaster="objects:none;">
+      <a-text id="hud" 
+      value="Summa Text" 
+      position="0 -0.1 -0.25"
+      align="center"
+      wrap-count="800"
+      ></a-text>
+    </a-camera>
+
+    <a-ring
+      id="circle"
+      rotation="-90 0 0"
+      radius-inner = "0.01"
+      radius-outer="0.02"
+    ></a-ring>
+
+    <a-box animation id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+
   </a-scene>
 </body>
 </html>
