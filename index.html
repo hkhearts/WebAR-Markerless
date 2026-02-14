@@ -4,75 +4,93 @@
   <meta charset="utf-8">
   <title>Markerless AR</title>
 
-  <!-- Stable A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 
-  <!-- Your Local aframe-ar -->
   <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
 </head>
 
 <body>
   <script>
+    // Function to update the text on the screen
     function showMessage(message){
         let hud = document.querySelector("#hud");
-        hud.setAttribute('value', message);
+        if(hud){
+          hud.setAttribute('value', message);
+        }
     }
 
-    AFRAME.registerComponent('ar-logic',{
+    // Custom Component to handle AR tracking logic
+    AFRAME.registerComponent('ar-logic', {
       init : function(){
         showMessage('ar-logic running');
       },
+
       tick : function(){
         let cam = document.querySelector("#cam");
-        if(!cam){return;}
+        
+        // Ensure the camera and the AR raycaster exist before proceeding
+        if(!cam || !cam.components['ar-raycaster']){ return; }
 
-        showMessage('cam detected');
+        // Get intersection with the real-world AR surfaces (Not the virtual ring)
+        let intersection = cam.components['ar-raycaster'].getIntersection();
+        if(!intersection){ return; }
 
-        let collision = cam.components.raycaster.getIntersection(this.el);
-        if(!collision) {return;}
-        showMessage('Collision Detected!!' + collision.point.x.toFixed(2) + " " + collision.point.z.toFixed(2));
+        // Output the raw X, Y, Z coordinates to the HUD
+        showMessage(
+          intersection.point.x.toFixed(2) + " " + 
+          intersection.point.y.toFixed(2) + " " + 
+          intersection.point.z.toFixed(2)
+        );
 
-
-        let circle = document.querySelector("#circle");
-        circle.setAttribute('position', circle.point);
-
+        // Move the target (ring) to the real-world surface intersection point
+        let target = document.querySelector("#target");
+        target.setAttribute('position', intersection.point);
       }
     });
 
+    // Handle screen taps to move the box
     window.addEventListener('touchstart', function(){
       let box = document.querySelector("#box");
-      let circle = document.querySelector("#circle");
-      let posCircle = circle.getAttribute('position');
-      let posBox = box.getAttribute('position');
+      let target = document.querySelector("#target"); // Instructor uses "target"
 
-      let distance = posBox.distanceTo(posCircle);
+      let posTarget = target.object3D.position;
+      let posBox = box.object3D.position;
 
-      let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)} `
-      box.setAttribute('animation', `property:position;to:${position_string}; dur:1000;`);
+      // Calculate distance between current box position and the target location
+      let distance = posBox.distanceTo(posTarget);
 
-      // box.setAttribute('position', pos);
+      let position_string = `${posTarget.x.toFixed(2)} ${posTarget.y.toFixed(2)} ${posTarget.z.toFixed(2)}`;
+      
+      // Calculate a dynamic duration so the movement speed is consistent
+      // The instructor multiplies by 500 (or 700) to adjust the speed
+      let dynamicDuration = Math.round(distance * 500); 
 
+      // Apply the animation to the box
+      box.setAttribute('animation', 
+        `property: position; to: ${position_string}; dur: ${dynamicDuration};`
+      );
     });
   </script>
 
-  <a-scene ar ar-logic vr-mode-ui="enabled: true" renderer="logarithmicDepthBuffer: true;">
-    <a-camera id="cam" ar-raycaster raycaster="objects:none;">
+  <a-scene ar ar-logic>
+    <a-camera id="cam" ar-raycaster raycaster="objects: none;">
       <a-text id="hud" 
-      value="Summa Text" 
-      position="0 -0.1 -0.25"
-      align="center"
-      wrap-count="800"
+        value="Loading..." 
+        position="0 -0.1 -0.25"
+        align="center"
+        wrap-count="800"
       ></a-text>
     </a-camera>
 
     <a-ring
-      id="circle"
+      id="target"
       rotation="-90 0 0"
-      radius-inner = "0.01"
+      radius-inner="0.01"
       radius-outer="0.02"
-    ></a-ring>
+      color="white">
+    </a-ring>
 
-    <a-box animation id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+    <a-box id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
 
   </a-scene>
 </body>
