@@ -1,98 +1,116 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Markerless AR - Fixed</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
+  <meta charset="utf-8">
+  <title>Simple WebXR Hit Test</title>
+  <script src="https://unpkg.com/three@0.160.0/build/three.js"></script>
+  <script src="https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
 </head>
-
 <body>
-    <script>
-        function showMessage(message) {
-            let hud = document.querySelector("#hud");
-            if (hud) hud.setAttribute('value', message);
-        }
 
-        AFRAME.registerComponent('ar-logic', {
-            init: function () {
-                this.camera = document.querySelector("#cam");
-                this.reticle = document.querySelector("#reticle");
-                showMessage('System Ready: Look at the floor');
-            },
-            tick: function () {
-                const raycaster = this.camera.components['ar-raycaster'];
-                if (!raycaster) return;
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+import { ARButton } from 'https://unpkg.com/three@0.160.0/examples/jsm/webxr/ARButton.js';
 
-                const intersections = raycaster.intersections;
+let camera, scene, renderer;
+let reticle;
+let hitTestSource = null;
+let hitTestSourceRequested = false;
 
-                if (intersections.length > 0) {
-                    const hitPoint = intersections[0].point;
-                    
-                    this.reticle.setAttribute('position', hitPoint);
-                    this.reticle.setAttribute('visible', true);
-                    
-                    showMessage(`Floor detected: ${hitPoint.x.toFixed(2)}, ${hitPoint.z.toFixed(2)}`);
-                } else {
-                    this.reticle.setAttribute('visible', false);
-                }
-            }
+init();
+
+function init() {
+
+  scene = new THREE.Scene();
+
+  camera = new THREE.PerspectiveCamera();
+
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.xr.enabled = true;
+  document.body.appendChild(renderer.domElement);
+
+  document.body.appendChild(
+    ARButton.createButton(renderer, {
+      requiredFeatures: ['hit-test']
+    })
+  );
+
+  // Light
+  const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+  scene.add(light);
+
+  // Reticle
+  const geometry = new THREE.RingGeometry(0.1, 0.15, 32).rotateX(-Math.PI / 2);
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  reticle = new THREE.Mesh(geometry, material);
+  reticle.matrixAutoUpdate = false;
+  reticle.visible = false;
+  scene.add(reticle);
+
+  renderer.setAnimationLoop(render);
+}
+
+function render(timestamp, frame) {
+
+  if (frame) {
+    const referenceSpace = renderer.xr.getReferenceSpace();
+    const session = renderer.xr.getSession();
+
+    if (!hitTestSourceRequested) {
+
+      session.requestReferenceSpace('viewer').then((viewerSpace) => {
+        session.requestHitTestSource({ space: viewerSpace }).then((source) => {
+          hitTestSource = source;
         });
+      });
 
-        window.addEventListener('touchstart', function () {
-            const box = document.querySelector("#box");
-            const reticle = document.querySelector("#reticle");
-            
-            const posReticle = reticle.object3D.position;
-            const posBox = box.object3D.position;
+      session.addEventListener('end', () => {
+        hitTestSourceRequested = false;
+        hitTestSource = null;
+      });
 
-            const distance = posBox.distanceTo(posReticle);
-            
-            if (reticle.getAttribute('visible') === 'true') {
-                const targetPos = `${posReticle.x} ${posReticle.y} ${posReticle.z}`;
-                
-                box.setAttribute('animation', {
-                    property: 'position',
-                    to: targetPos,
-                    dur: 1000,
-                    easing: 'easeOutElastic'
-                });
-                
-                showMessage(`Moving box ${distance.toFixed(2)}m`);
-            }
-        });
-    </script>
+      hitTestSourceRequested = true;
+    }
 
-    <a-scene ar ar-logic vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
-        
-        <a-camera id="cam" ar-raycaster raycaster="objects:none;">
-            <a-text id="hud" 
-                value="Initializing AR..." 
-                position="0 -0.1 -0.2"
-                align="center"
-                color="white"
-                scale="0.12 0.12 0.12"
-                width="2">
-            </a-text>
-        </a-camera>
+    if (hitTestSource) {
 
-        <a-ring id="reticle"
-            rotation="-90 0 0"
-            radius-inner="0.04"
-            radius-outer="0.05"
-            color="cyan"
-            visible="false">
-        </a-ring>
+      const hitTestResults = frame.getHitTestResults(hitTestSource);
 
-        <a-box id="box" 
-            position="0 0.1 -1" 
-            color="red" 
-            scale="0.1 0.1 0.1">
-        </a-box>
+      if (hitTestResults.length) {
 
-        <a-light type="directional" position="1 1 1"></a-light>
-        <a-light type="ambient" color="#404040"></a-light>
+        const hit = hitTestResults[0];
+        const pose = hit.getPose(referenceSpace);
 
-    </a-scene>
+        reticle.visible = true;
+        reticle.matrix.fromArray(pose.transform.matrix);
+
+      } else {
+        reticle.visible = false;
+      }
+    }
+  }
+
+  renderer.render(scene, camera);
+}
+
+// Place object on tap
+renderer?.domElement?.addEventListener('click', () => {
+  if (reticle.visible) {
+
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, 0.1, 0.1),
+      new THREE.MeshStandardMaterial({ color: 0xff0000 })
+    );
+
+    box.position.setFromMatrixPosition(reticle.matrix);
+    scene.add(box);
+  }
+});
+</script>
+
 </body>
 </html>
