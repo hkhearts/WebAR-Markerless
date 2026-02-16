@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Modern Markerless AR - Place & Pick Up Object</title>
+  <title>Modern Markerless AR</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 </head>
 
@@ -13,45 +13,37 @@
         this.hud = document.querySelector("#hud");
         this.circle = document.querySelector("#circle");
         this.box = document.querySelector("#box");
-        
-        // Track whether the box is currently anchored to the real world
-        this.isPlaced = false;
-
-        this.showMessage('AR Ready. Scanning for surface...');
 
         // Listen for screen taps
         this.el.sceneEl.addEventListener('select', () => {
-          // Only allow placing/picking up if the ring is currently detecting a surface
-          if (this.circle.getAttribute('visible')) {
+          
+          // CORRECT VISIBILITY CHECK: Check the raw 3D engine, not the HTML attribute
+          if (this.circle.object3D.visible) {
             
-            // Toggle the placed state (true becomes false, false becomes true)
-            this.isPlaced = !this.isPlaced; 
+            // 1. Get the exact position of the ring
+            let pos = this.circle.object3D.position;
             
-            if (this.isPlaced) {
-              this.showMessage('Box placed! Tap again to pick it up.');
-            } else {
-              this.showMessage('Box picked up. Find a new spot!');
-            }
+            // 2. Move the box! We add 0.05 to the Y-axis (half of its 0.1 scale)
+            // so it sits perfectly ON the floor, instead of halfway inside it.
+            this.box.object3D.position.set(pos.x, pos.y + 0.05, pos.z);
+            
+            // 3. Make the box visible
+            this.box.setAttribute('visible', true);
+
+            this.showMessage('Box placed! Tap elsewhere to move it.');
           }
         });
       },
 
       tick: function () {
-        // Check if the hit-test is currently finding a surface
-        if (this.circle && this.circle.getAttribute('visible')) {
-          let pos = this.circle.getAttribute('position');
-          
-          // If we are currently holding the box (not placed)
-          if (!this.isPlaced) {
-            this.box.setAttribute('position', pos);
-            this.box.setAttribute('visible', true); // Ensure it's visible while tracking
-            this.showMessage(`Previewing at: ${pos.x.toFixed(2)} ${pos.z.toFixed(2)}`);
+        // Update the HUD based on whether the camera currently sees a surface
+        if (this.circle && this.circle.object3D.visible) {
+          if (this.box.getAttribute('visible') === false) {
+             this.showMessage('Surface found! Tap screen to place the cube.');
           }
         } else {
-          // If the camera loses track of the surface while holding the box
-          if (!this.isPlaced) {
-            this.showMessage('Scanning for flat surface...');
-            this.box.setAttribute('visible', false); // Hide the box so it doesn't float in mid-air
+          if (this.box.getAttribute('visible') === false) {
+             this.showMessage('Scanning room... Move camera slowly.');
           }
         }
       },
