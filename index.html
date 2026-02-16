@@ -3,65 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Stable A-Frame -->
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <title>Modern MarkLess AR</title>
 
-    <!-- Your Local aframe-ar -->
-    <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
-    <title>MarkLess</title>
+    <script>
+      // We register a simple component to listen for screen taps
+      AFRAME.registerComponent('tap-place', {
+        init: function() {
+          const reticle = document.getElementById('lingkaran');
+          const box = document.getElementById('box');
+          
+          // 'select' is the WebXR standard event for a screen tap in AR
+          this.el.sceneEl.addEventListener('select', () => {
+            // Only place the box if the reticle is currently detecting a surface
+            if (reticle.getAttribute('visible')) {
+              // Copy the position from the reticle to the box
+              const position = reticle.getAttribute('position');
+              box.setAttribute('position', position);
+              box.setAttribute('visible', 'true');
+            }
+          });
+        }
+      });
+    </script>
 </head>
 <body>
-    <script>
-      function tampilPesan(pesan){
-        let hud = document.querySelector("#hud");
-        hud.setAttribute('value', pesan);
-      }
-
-        AFRAME.registerComponent('ar-logic',{
-            init: function(){
-                tampilPesan('ar-logic running');
-            },
-            tick : function(){
-              let cam = document.querySelector("#cam");
-              if(!cam){return;}
-              tampilPesan('cam detected');
-              let tumbukan = cam.components.raycaster.getIntersection(this.el);
-              if(!tumbukan){return;}
-              tampilPesan('ada tumbukan' + tumbukan.point.x.toFixed(2) + " " + tumbukan.point.z.toFixed(2));
-              let lingkaran = document.querySelector("#lingkaran");
-              lingkaran.setAttribute('position', tumbukan.point);
-            }
-        });
-
-        window.addEventListener('touchstart', function(){
-          let box = document.querySelector("#box");
-          let lingkaran = document.querySelector("#lingkaran");
-          let pos = lingkaran.getAttribute('position');
-
-          box.setAttribute('position', pos);
-        });
-
-    </script>
-
-
-    <a-scene ar ar-logic>
-        <a-camera id="cam" ar-raycaster raycaster="objects:none;">
-          <a-text id="hud" 
-            value="Summa Text" 
-            position="0 -0.1 -0.25"
-            align="center"
-            wrap-count="800"
-          ></a-text>
-        </a-camera>
-    
+    <a-scene webxr="requiredFeatures: hit-test, local-floor;" tap-place>
+        
+        <a-camera id="cam" position="0 1.6 0"></a-camera>
+        
         <a-ring
           id="lingkaran"
+          ar-hit-test
           rotation="-90 0 0"
-          radius-inner="0.01"
-          radius-outer="0.02">
+          radius-inner="0.05"
+          radius-outer="0.1"
+          color="teal">
         </a-ring>
     
-        <a-box id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+        <a-box id="box" position="0 0 0" color="red" scale="0.2 0.2 0.2" visible="false"></a-box>
     
     </a-scene>
 </body>
