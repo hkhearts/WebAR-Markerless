@@ -1,52 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Modern Markerless AR with Animation</title>
+  <title>Modern Markerless AR - Place & Pick Up Object</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 </head>
 
 <body>
   <script>
-    // We bundle your logic into a single modern A-Frame component
     AFRAME.registerComponent('ar-logic', {
       init: function () {
         this.hud = document.querySelector("#hud");
         this.circle = document.querySelector("#circle");
         this.box = document.querySelector("#box");
+        
+        // Track whether the box is currently anchored to the real world
+        this.isPlaced = false;
 
-        this.showMessage('AR Ready. Scanning for floor...');
+        this.showMessage('AR Ready. Scanning for surface...');
 
-        // In WebXR, 'select' replaces 'touchstart' for screen taps
+        // Listen for screen taps
         this.el.sceneEl.addEventListener('select', () => {
-          // Only move the box if the circle (reticle) is currently visible on a surface
+          // Only allow placing/picking up if the ring is currently detecting a surface
           if (this.circle.getAttribute('visible')) {
-            let posCircle = this.circle.getAttribute('position');
-            let posBox = this.box.getAttribute('position');
             
-            // Format the target coordinates
-            let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)}`;
-
-            // Remove the old animation first (so you can tap multiple times in a row)
-            this.box.removeAttribute('animation');
-
-            // Apply the new animation to glide the box to the reticle
-            this.box.setAttribute('animation', `property: position; to: ${position_string}; dur: 1000; easing: easeOutQuad;`);
+            // Toggle the placed state (true becomes false, false becomes true)
+            this.isPlaced = !this.isPlaced; 
+            
+            if (this.isPlaced) {
+              this.showMessage('Box placed! Tap again to pick it up.');
+            } else {
+              this.showMessage('Box picked up. Find a new spot!');
+            }
           }
         });
       },
 
       tick: function () {
-        // Instead of raycasting manually, we just check where the ar-hit-test put the circle
+        // Check if the hit-test is currently finding a surface
         if (this.circle && this.circle.getAttribute('visible')) {
           let pos = this.circle.getAttribute('position');
-          this.showMessage(`Collision Detected!! ${pos.x.toFixed(2)} ${pos.z.toFixed(2)}`);
+          
+          // If we are currently holding the box (not placed)
+          if (!this.isPlaced) {
+            this.box.setAttribute('position', pos);
+            this.box.setAttribute('visible', true); // Ensure it's visible while tracking
+            this.showMessage(`Previewing at: ${pos.x.toFixed(2)} ${pos.z.toFixed(2)}`);
+          }
         } else {
-          this.showMessage('Scanning for flat surface...');
+          // If the camera loses track of the surface while holding the box
+          if (!this.isPlaced) {
+            this.showMessage('Scanning for flat surface...');
+            this.box.setAttribute('visible', false); // Hide the box so it doesn't float in mid-air
+          }
         }
       },
 
-      // Helper function to update HUD
+      // Helper function to update the text on the screen
       showMessage: function (message) {
         if (this.hud) {
           this.hud.setAttribute('value', message);
@@ -76,7 +86,7 @@
       color="teal">
     </a-ring>
 
-    <a-box id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+    <a-box id="box" visible="false" color="red" scale="0.1 0.1 0.1"></a-box>
 
   </a-scene>
 </body>
