@@ -33,6 +33,13 @@
             }
         });
 
+        window.addEventListener('touchstart', function(){
+          let box = document.querySelector("#box");
+          let lingkaran = document.querySelector("#lingkaran");
+          let pos = lingkaran.getAttribute('position');
+
+          box.setAttribute('position', pos);
+        });
 
     </script>
 
