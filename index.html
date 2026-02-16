@@ -28,6 +28,8 @@
               let tumbukan = cam.components.raycaster.getIntersection(this.el);
               if(!tumbukan){return;}
               tampilPesan('ada tumbukan' + tumbukan.point.x.toFixed(2) + " " + tumbukan.point.z.toFixed(2));
+              let lingkaran = document.querySelector("#lingkaran");
+              lingkaran.setAttribute('position', tumbukan.point);
             }
         });
 
