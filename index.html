@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Modern Markerless AR</title>
+  <title>Temple AR MarkerLess</title>
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
 </head>
 
@@ -17,35 +17,37 @@
         // Listen for screen taps
         this.el.sceneEl.addEventListener('select', () => {
           
-          // CORRECT VISIBILITY CHECK: Check the raw 3D engine, not the HTML attribute
           if (this.circle.object3D.visible) {
-            
-            // 1. Get the exact position of the ring
             let pos = this.circle.object3D.position;
             
-            // 2. Move the box! We add 0.05 to the Y-axis (half of its 0.1 scale)
-            // so it sits perfectly ON the floor, instead of halfway inside it.
+            // Move the box and boost the Y-axis so it sits ON the floor
             this.box.object3D.position.set(pos.x, pos.y + 0.05, pos.z);
-            
-            // 3. Make the box visible
             this.box.setAttribute('visible', true);
-
-            this.showMessage('Box placed! Tap elsewhere to move it.');
           }
         });
       },
 
       tick: function () {
-        // Update the HUD based on whether the camera currently sees a surface
+        // 1. Check for the camera, matching your original script logic
+        let cam = document.querySelector("#cam");
+        if (!cam) { return; }
+
+        // Start building the message string
+        let debugMessage = "cam detected\n";
+
+        // 2. Check if the hit-test is currently finding a surface
         if (this.circle && this.circle.object3D.visible) {
-          if (this.box.getAttribute('visible') === false) {
-             this.showMessage('Surface found! Tap screen to place the cube.');
-          }
+          let pos = this.circle.object3D.position;
+          
+          // Append the live collision points (X and Z) to the message
+          debugMessage += `Collision Points: ${pos.x.toFixed(2)} ${pos.z.toFixed(2)}`;
         } else {
-          if (this.box.getAttribute('visible') === false) {
-             this.showMessage('Scanning room... Move camera slowly.');
-          }
+          // If no surface is found yet
+          debugMessage += "Scanning for surface...";
         }
+
+        // 3. Push the combined text to the HUD every frame
+        this.showMessage(debugMessage);
       },
 
       // Helper function to update the text on the screen
@@ -64,8 +66,10 @@
         value="Loading..." 
         position="0 -0.1 -0.25"
         align="center"
-        wrap-count="800"
-        color="white">
+        wrap-count="40"
+        color="lime"
+        geometry="primitive: plane; width: 0.3; height: 0.05"
+        material="color: black; opacity: 0.5">
       </a-text>
     </a-camera>
 
