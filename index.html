@@ -12,12 +12,26 @@
 </head>
 <body>
     <script>
+      function tampilPesan(pesan){
+        let hud = document.querySelector("#hud");
+        hud.setAttribute('value', pesan);
+      }
+
         AFRAME.registerComponent('ar-logic',{
             init: function(){
-                let hud = document.querySelector("#hud");
-                hud.setAttribute('value', 'ar-logic running');
+                tampilPesan('ar-logic running');
+            },
+            tick : function(){
+              let cam = document.querySelector("#cam");
+              if(!cam){return;}
+              tampilPesan('cam detected');
+              let tumbukan = cam.components.raycaster.getIntersection(this.el);
+              if(!tumbukan){return;}
+              tampilPesan('ada tumbukan' + tumbukan.point.x.toFixed(2) + " " + tumbukan.point.z.toFixed(2));
             }
-        })
+        });
+
+
     </script>
 
 
