@@ -1,98 +1,79 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <title>Markerless AR - Fixed</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
+  <meta charset="utf-8">
+  <title>Markerless AR</title>
+
+  <!-- Stable A-Frame -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+
+  <!-- Your Local aframe-ar -->
+  <script src="./aframe-ar-main/dist/aframe-ar.min.js"></script>
 </head>
 
 <body>
-    <script>
-        function showMessage(message) {
-            let hud = document.querySelector("#hud");
-            if (hud) hud.setAttribute('value', message);
-        }
+  <script>
+    function showMessage(message){
+        let hud = document.querySelector("#hud");
+        hud.setAttribute('value', message);
+    }
 
-        AFRAME.registerComponent('ar-logic', {
-            init: function () {
-                this.camera = document.querySelector("#cam");
-                this.reticle = document.querySelector("#reticle");
-                showMessage('System Ready: Look at the floor');
-            },
-            tick: function () {
-                const raycaster = this.camera.components['ar-raycaster'];
-                if (!raycaster) return;
+    AFRAME.registerComponent('ar-logic',{
+      init : function(){
+        showMessage('ar-logic running');
+      },
+      tick : function(){
+        let cam = document.querySelector("#cam");
+        if(!cam){return;}
 
-                const intersections = raycaster.intersections;
+        showMessage('cam detected');
 
-                if (intersections.length > 0) {
-                    const hitPoint = intersections[0].point;
-                    
-                    this.reticle.setAttribute('position', hitPoint);
-                    this.reticle.setAttribute('visible', true);
-                    
-                    showMessage(`Floor detected: ${hitPoint.x.toFixed(2)}, ${hitPoint.z.toFixed(2)}`);
-                } else {
-                    this.reticle.setAttribute('visible', false);
-                }
-            }
-        });
+        let collision = cam.components.raycaster.getIntersection(this.el);
+        if(!collision) {return;}
+        showMessage('Collision Detected!!' + collision.point.x.toFixed(2) + " " + collision.point.z.toFixed(2));
 
-        window.addEventListener('touchstart', function () {
-            const box = document.querySelector("#box");
-            const reticle = document.querySelector("#reticle");
-            
-            const posReticle = reticle.object3D.position;
-            const posBox = box.object3D.position;
 
-            const distance = posBox.distanceTo(posReticle);
-            
-            if (reticle.getAttribute('visible') === 'true') {
-                const targetPos = `${posReticle.x} ${posReticle.y} ${posReticle.z}`;
-                
-                box.setAttribute('animation', {
-                    property: 'position',
-                    to: targetPos,
-                    dur: 1000,
-                    easing: 'easeOutElastic'
-                });
-                
-                showMessage(`Moving box ${distance.toFixed(2)}m`);
-            }
-        });
-    </script>
+        let circle = document.querySelector("#circle");
+        circle.setAttribute('position', circle.point);
 
-    <a-scene ar ar-logic vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;">
-        
-        <a-camera id="cam" ar-raycaster raycaster="objects:none;">
-            <a-text id="hud" 
-                value="Initializing AR..." 
-                position="0 -0.1 -0.2"
-                align="center"
-                color="white"
-                scale="0.12 0.12 0.12"
-                width="2">
-            </a-text>
-        </a-camera>
+      }
+    });
 
-        <a-ring id="reticle"
-            rotation="-90 0 0"
-            radius-inner="0.04"
-            radius-outer="0.05"
-            color="cyan"
-            visible="false">
-        </a-ring>
+    window.addEventListener('touchstart', function(){
+      let box = document.querySelector("#box");
+      let circle = document.querySelector("#circle");
+      let posCircle = circle.getAttribute('position');
+      let posBox = box.getAttribute('position');
 
-        <a-box id="box" 
-            position="0 0.1 -1" 
-            color="red" 
-            scale="0.1 0.1 0.1">
-        </a-box>
+      let distance = posBox.distanceTo(posCircle);
 
-        <a-light type="directional" position="1 1 1"></a-light>
-        <a-light type="ambient" color="#404040"></a-light>
+      let position_string = `${posCircle.x.toFixed(2)} ${posCircle.y.toFixed(2)} ${posCircle.z.toFixed(2)} `
+      box.setAttribute('animation', `property:position;to:${position_string}; dur:1000;`);
 
-    </a-scene>
+      // box.setAttribute('position', pos);
+
+    });
+  </script>
+
+  <a-scene ar ar-logic vr-mode-ui="enabled: true" renderer="logarithmicDepthBuffer: true;">
+    <a-camera id="cam" ar-raycaster raycaster="objects:none;">
+      <a-text id="hud" 
+      value="Summa Text" 
+      position="0 -0.1 -0.25"
+      align="center"
+      wrap-count="800"
+      ></a-text>
+    </a-camera>
+
+    <a-ring
+      id="circle"
+      rotation="-90 0 0"
+      radius-inner = "0.01"
+      radius-outer="0.02"
+    ></a-ring>
+
+    <a-box animation id="box" position="0 0 -1" color="red" scale="0.2 0.2 0.2"></a-box>
+
+  </a-scene>
 </body>
 </html>
