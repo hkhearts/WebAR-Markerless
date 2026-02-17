@@ -12,31 +12,31 @@
 </head>
 <body>
     <script>
-      function tampilPesan(pesan){
+      function showMessage(message){
         let hud = document.querySelector("#hud");
-        hud.setAttribute('value', pesan);
+        hud.setAttribute('value', message);
       }
 
         AFRAME.registerComponent('ar-logic',{
             init: function(){
-                tampilPesan('ar-logic running');
+                showMessage('ar-logic running');
             },
             tick : function(){
               let cam = document.querySelector("#cam");
               if(!cam){return;}
-              tampilPesan('cam detected');
-              let tumbukan = cam.components.raycaster.getIntersection(this.el);
-              if(!tumbukan){return;}
-              tampilPesan('ada tumbukan' + tumbukan.point.x.toFixed(2) + " " + tumbukan.point.z.toFixed(2));
-              let lingkaran = document.querySelector("#lingkaran");
-              lingkaran.setAttribute('position', tumbukan.point);
+              showMessage('cam detected');
+              let collision = cam.components.raycaster.getIntersection(this.el);
+              if(!collision){return;}
+              showMessage('Occured collision' + collision.point.x.toFixed(2) + " " + collision.point.z.toFixed(2));
+              let circle = document.querySelector("#circle");
+              circle.setAttribute('position', collision.point);
             }
         });
 
         window.addEventListener('touchstart', function(){
           let box = document.querySelector("#box");
-          let lingkaran = document.querySelector("#lingkaran");
-          let pos = lingkaran.getAttribute('position');
+          let circle = document.querySelector("#circle");
+          let pos = circle.getAttribute('position');
 
           box.setAttribute('position', pos);
         });
@@ -55,7 +55,7 @@
         </a-camera>
     
         <a-ring
-          id="lingkaran"
+          id="circle"
           rotation="-90 0 0"
           radius-inner="0.01"
           radius-outer="0.02">
